@@ -204,10 +204,7 @@ class FirebaseService {
 
         try {
             const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
-            // Use set with merge: true to act as an "upsert".
-            // This creates the document if it doesn't exist, and merges data if it does,
-            // preventing "No document to update" errors.
-            return await userRef.set(sanitizedData, { merge: true });
+            return await userRef.update(sanitizedData);
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('circular structure')) {
                 console.error("Critical Error: A circular reference was detected in the application state, preventing data from being saved. This is a bug that needs to be fixed.", {data});
@@ -219,14 +216,7 @@ class FirebaseService {
 
     async updateUserOnlineStatus(userId: string, status: 'online' | string) {
         const userRef = this.getUserDocRef(userId);
-        // This can fail if the document doesn't exist yet.
-        // The calling context should ensure the document exists before calling this.
-        return userRef.update({ "userProfile.onlineStatus": status }).catch(error => {
-            // Suppress "not found" errors as the app logic will create the doc shortly.
-            if (error.code !== 'not-found') {
-                console.error("Error updating user online status:", error);
-            }
-        });
+        return userRef.update({ "userProfile.onlineStatus": status });
     }
 
     // --- Explored Collection Methods ---
