@@ -204,7 +204,7 @@ class FirebaseService {
 
         try {
             const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
-            return await userRef.set(sanitizedData, { merge: true });
+            return await userRef.update(sanitizedData);
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('circular structure')) {
                 console.error("Critical Error: A circular reference was detected in the application state, preventing data from being saved. This is a bug that needs to be fixed.", {data});
@@ -216,7 +216,7 @@ class FirebaseService {
 
     async updateUserOnlineStatus(userId: string, status: 'online' | string) {
         const userRef = this.getUserDocRef(userId);
-        return userRef.set({ userProfile: { onlineStatus: status } }, { merge: true });
+        return userRef.update({ "userProfile.onlineStatus": status });
     }
 
     // --- Explored Collection Methods ---
