@@ -216,7 +216,7 @@ class FirebaseService {
 
     async updateUserOnlineStatus(userId: string, status: 'online' | string) {
         const userRef = this.getUserDocRef(userId);
-        return userRef.update({ "userProfile.onlineStatus": status });
+        return userRef.set({ userProfile: { onlineStatus: status } }, { merge: true });
     }
 
     // --- Explored Collection Methods ---
