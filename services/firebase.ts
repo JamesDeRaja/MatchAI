@@ -204,7 +204,7 @@ class FirebaseService {
 
         try {
             const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
-            return await userRef.update(sanitizedData);
+            return await userRef.set(sanitizedData, { merge: true });
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('circular structure')) {
                 console.error("Critical Error: A circular reference was detected in the application state, preventing data from being saved. This is a bug that needs to be fixed.", {data});
