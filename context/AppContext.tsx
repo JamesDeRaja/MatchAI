@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Page, User, RelationshipType, AiMessage, Conversation, Message, ExploreCardData, UsersList } from '../types';
+import { Page, User, RelationshipType, AiMessage, Conversation, Message, ExploreCardData } from '../types';
 import { GUEST_USER, MOCK_USERS } from '../constants';
 import { firebaseService, FirestoreUserData } from '../services/firebase';
 import firebase from 'firebase/compat/app';
@@ -9,7 +9,6 @@ import { geminiService } from '../services/geminiService';
 
 interface AppContextType {
   user: User | null;
-  usersList: UsersList;
   isInitialized: boolean;
   activePage: Page;
   onboardingProgress: number;
@@ -54,7 +53,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [usersList, setUsersList] = useState< {[key:string]:User} | {}>({});
   const [activePage, _setActivePage] = useState<Page>(Page.AI_CHAT);
   const [onboardingProgress, setOnboardingProgress] = useState(0);
 
@@ -130,18 +128,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setExploreUsers(prev => prev.filter(u => u.id !== dismissedUserId));
     setConversations(prev => prev.filter(c => c.participant.id !== dismissedUserId));
   }, [user]);
-  useEffect(()=>{
 
-  },[usersList]);
   useEffect(() => {
     let unsubscribeData: (() => void) | null = null;
-    firebaseService.getAllUsers().then((response)=>{
-      let object: UsersList = {};
-      response.forEach((userItem:User)=>{
-        object[userItem.id]=userItem;
-      })
-      setUsersList({...object});
-    });
+
     const unsubscribeAuth = firebaseService.onAuthChange(async (firebaseUser: firebase.User | null) => {
         if (unsubscribeData) {
             unsubscribeData();
@@ -149,10 +139,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (firebaseUser) {
-            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
+            // NOTE: Do not attempt to update user data here directly.
+            // It causes a race condition if the user document doesn't exist yet.
+            // The listener below will handle creation or hydration.
             
             unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
                 if (data) {
+                    // User document exists, hydrate the state.
                     setUser(data.userProfile);
                     setAiChatMessages(data.aiChatMessages || []);
                     setConversations(data.conversations || []);
@@ -163,10 +156,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     setShowExploreTabNotification(data.showExploreTabNotification || false);
                     setIsInitialized(true);
                 } else {
-                    // Data is null, probably a new user, so create their data
+                    // Data is null, probably a new user, so create their data.
+                    // createInitialUserData sets onlineStatus to 'online' by default.
                     const guestUserShell = firebaseUser.isAnonymous ? GUEST_USER : undefined;
                     await firebaseService.createInitialUserData(firebaseUser, guestUserShell);
-                    // The listener will be triggered again with the new data
+                    // The listener will be triggered again with the new data, hydrating the app.
                 }
             });
         } else {
@@ -227,14 +221,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const signOut = useCallback(async () => {
       try {
-          if (user) {
-            await firebaseService.updateUserOnlineStatus(user.id, new Date().toISOString());
-          }
+          // The firebaseService.signOut method now handles updating the online status.
           await firebaseService.signOut();
       } catch (error) {
           console.error("Error signing out:", error);
       }
-  }, [user]);
+  }, []);
   
   const sendMessage = useCallback(async (participantId: string, text: string, imageUrl?: string) => {
     if (!user) return;
@@ -252,7 +244,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // --- Update SENDER's state locally & persist ---
     const senderConvo = conversations.find(c => c.participant.id === participantId);
     let updatedSenderConversations;
-    let targetConversation:any;
+    let targetConversation;
 
     if (senderConvo) {
       targetConversation = { ...senderConvo, messages: [...senderConvo.messages, newMessage] };
@@ -466,7 +458,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAiChatMessages: setAiChatMessagesAndPersist, onboardingStep, updateOnboardingStep, userTags,
     updateUserTags, selectedRelationshipGoal, setSelectedRelationshipGoal: setSelectedRelationshipGoalAndPersist,
     conversations, requests, myConversations, viewingConversationId, setViewingConversationId: handleSetViewingConversationId, sendMessage,
-    typingParticipantIds, exploreUsers, dismissExploreUser, showExploreTabNotification, totalUnreadCount, usersList
+    typingParticipantIds, exploreUsers, dismissExploreUser, showExploreTabNotification, totalUnreadCount
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
