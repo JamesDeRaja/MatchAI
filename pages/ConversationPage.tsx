@@ -196,8 +196,8 @@ const ConversationPage: React.FC<{ conversationId: string }> = ({ conversationId
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !participant) return;
-        await sendMessage(participant.id, newMessage.trim());
         setNewMessage('');
+        await sendMessage(participant.id, newMessage.trim());
     };
     
     const handleImageSend = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,8 +206,8 @@ const ConversationPage: React.FC<{ conversationId: string }> = ({ conversationId
             const reader = new FileReader();
             reader.onload = async () => {
                 const imageUrl = reader.result as string;
-                await sendMessage(participant.id, newMessage, imageUrl);
                 setNewMessage('');
+                await sendMessage(participant.id, newMessage, imageUrl);
             };
             reader.readAsDataURL(file);
         }
