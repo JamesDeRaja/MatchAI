@@ -139,13 +139,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (firebaseUser) {
-            // NOTE: Do not attempt to update user data here directly.
-            // It causes a race condition if the user document doesn't exist yet.
-            // The listener below will handle creation or hydration.
+            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
             
             unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
                 if (data) {
-                    // User document exists, hydrate the state.
                     setUser(data.userProfile);
                     setAiChatMessages(data.aiChatMessages || []);
                     setConversations(data.conversations || []);
@@ -156,11 +153,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     setShowExploreTabNotification(data.showExploreTabNotification || false);
                     setIsInitialized(true);
                 } else {
-                    // Data is null, probably a new user, so create their data.
-                    // createInitialUserData sets onlineStatus to 'online' by default.
+                    // Data is null, probably a new user, so create their data
                     const guestUserShell = firebaseUser.isAnonymous ? GUEST_USER : undefined;
                     await firebaseService.createInitialUserData(firebaseUser, guestUserShell);
-                    // The listener will be triggered again with the new data, hydrating the app.
+                    // The listener will be triggered again with the new data
                 }
             });
         } else {
@@ -221,12 +217,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const signOut = useCallback(async () => {
       try {
-          // The firebaseService.signOut method now handles updating the online status.
+          if (user) {
+            await firebaseService.updateUserOnlineStatus(user.id, new Date().toISOString());
+          }
           await firebaseService.signOut();
       } catch (error) {
           console.error("Error signing out:", error);
       }
-  }, []);
+  }, [user]);
   
   const sendMessage = useCallback(async (participantId: string, text: string, imageUrl?: string) => {
     if (!user) return;
