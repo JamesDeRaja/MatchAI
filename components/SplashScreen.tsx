@@ -1,471 +1,58 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Page, User, RelationshipType, AiMessage, Conversation, Message, ExploreCardData } from '../types';
-import { GUEST_USER, MOCK_USERS } from '../constants';
-import { firebaseService, FirestoreUserData } from '../services/firebase';
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import { geminiService } from '../services/geminiService';
+
+import React from 'react';
+import { useAppContext } from '../context/AppContext';
+
+const HeartIcon: React.FC<{ className: string }> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="m11.645 20.91-1.112-1.016C4.872 14.624 2 11.536 2 8.019 2 4.904 4.496 2.5 7.5 2.5c1.808 0 3.504.856 4.5 2.15C13.008 3.352 14.688 2.5 16.5 2.5c3.008 0 5.5 2.404 5.5 5.519 0 3.517-2.872 6.605-8.533 11.875L12.355 20.91a.5.5 0 0 1-.71 0Z" />
+  </svg>
+);
+
+const GoogleIcon: React.FC<{ className: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.591l6.19,5.238C44.434,36.338,48,30.656,48,24C48,22.659,47.862,21.35,47.611,20.083z"/>
+    </svg>
+);
 
 
-interface AppContextType {
-  user: User | null;
-  isInitialized: boolean;
-  activePage: Page;
-  onboardingProgress: number;
-  signInAsGuest: () => void;
-  signInWithGoogle: () => void;
-  signOut: () => void;
-  setActivePage: (page: Page) => void;
-  updateOnboardingProgress: (progress: number) => void;
-  completeOnboarding: (relationshipGoal: RelationshipType, tags: { positive: string[], negative:string[] }) => void;
-  updateUserProfile: (name: string, avatar: string) => void;
-  updateUserTagsInProfile: (tags: { positive: string[]; negative: string[] }) => void;
-  
-  aiChatMessages: AiMessage[];
-  addAiChatMessage: (message: AiMessage) => void;
-  updateAiChatMessage: (messageId: string, updates: Partial<AiMessage>) => void;
-  setAiChatMessages: (messages: AiMessage[]) => void;
-  
-  onboardingStep: number;
-  updateOnboardingStep: (step: number) => void;
-  userTags: { positive: string[], negative: string[] };
-  updateUserTags: (tags: { positive: string[], negative: string[] }) => void;
-  selectedRelationshipGoal: RelationshipType | null;
-  setSelectedRelationshipGoal: (goal: RelationshipType | null) => void;
+const SplashScreen: React.FC = () => {
+  const { signInAsGuest, signInWithGoogle } = useAppContext();
 
-  conversations: Conversation[];
-  requests: Conversation[];
-  myConversations: Conversation[];
-  viewingConversationId: string | null;
-  setViewingConversationId: (id: string | null) => void;
-  sendMessage: (participantId: string, text: string, imageUrl?: string) => void;
-  typingParticipantIds: string[];
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-rose-100 to-teal-100 dark:from-gray-800 dark:to-slate-900 text-center p-4">
+      <div className="flex items-center mb-4">
+        <HeartIcon className="w-16 h-16 text-rose-500 animate-pulse" />
+        <h1 className="text-5xl font-bold text-gray-800 dark:text-white ml-3">MatchAI</h1>
+      </div>
+      <p className="text-lg text-gray-600 dark:text-gray-300 mb-12">
+        Let our AI help you find your perfect connection.
+      </p>
 
-  exploreUsers: User[];
-  dismissExploreUser: (userId: string) => void;
+      <div className="w-full max-w-xs space-y-4">
+        <button
+          onClick={signInWithGoogle}
+          className="w-full bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center"
+        >
+          <GoogleIcon className="w-6 h-6 mr-3" />
+          Sign in with Google
+        </button>
 
-  showExploreTabNotification: boolean;
-  totalUnreadCount: number;
-}
+        <button
+          onClick={signInAsGuest}
+          className="w-full bg-transparent text-gray-600 dark:text-gray-400 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
+        >
+          Continue as Guest
+        </button>
+      </div>
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [activePage, _setActivePage] = useState<Page>(Page.AI_CHAT);
-  const [onboardingProgress, setOnboardingProgress] = useState(0);
-
-  const [aiChatMessages, setAiChatMessages] = useState<AiMessage[]>([]);
-  const [onboardingStep, setOnboardingStep] = useState(0);
-  const [userTags, setUserTags] = useState<{ positive: string[], negative: string[] }>({ positive: [], negative: [] });
-  const [selectedRelationshipGoal, setSelectedRelationshipGoal] = useState<RelationshipType | null>(null);
-
-  const [conversations, setConversations] =useState<Conversation[]>([]);
-  const [viewingConversationId, setViewingConversationId] = useState<string | null>(null);
-  const [typingParticipantIds, setTypingParticipantIds] = useState<string[]>([]);
-
-  const [exploreUsers, setExploreUsers] = useState<User[]>([]);
-
-  const [showExploreTabNotification, setShowExploreTabNotification] = useState(false);
-  
-  const prevConversationsLength = useRef<number | undefined>(undefined);
-
-  const setActivePage = useCallback((page: Page) => {
-    if (page === Page.EXPLORE) {
-      setShowExploreTabNotification(false);
-      if (user) {
-        firebaseService.updateUserData(user.id, { showExploreTabNotification: false });
-      }
-    }
-    _setActivePage(page);
-  }, [user]);
-
-  const { requests, myConversations } = useMemo(() => {
-    if (!user) return { requests: [], myConversations: [] };
-    
-    const reqs: Conversation[] = [];
-    const convos: Conversation[] = [];
-
-    conversations.forEach(c => {
-      if (c.messages.length === 0) return;
-
-      const iReplied = c.messages.some(m => m.senderId === user.id);
-      const theyStarted = c.messages[0].senderId === c.participant.id;
-
-      if (theyStarted && !iReplied) {
-        reqs.push(c);
-      } else {
-        convos.push(c);
-      }
-    });
-
-    const sortByMostRecent = (a: Conversation, b: Conversation) => 
-        new Date(b.messages[b.messages.length - 1].timestamp).getTime() - 
-        new Date(a.messages[a.messages.length - 1].timestamp).getTime();
-
-    return { 
-      requests: reqs.sort(sortByMostRecent), 
-      myConversations: convos.sort(sortByMostRecent) 
-    };
-  }, [conversations, user]);
-  
-  const totalUnreadCount = useMemo(() => {
-    if (!user) return 0;
-    
-    return myConversations.reduce((count, convo) => {
-        return count + convo.unreadCount;
-    }, 0);
-  }, [myConversations, user]);
-
-  const dismissExploreUser = useCallback(async (dismissedUserId: string) => {
-    if (!user) return;
-    
-    if (!MOCK_USERS.some(mock => mock.id === dismissedUserId)) {
-      await firebaseService.addDismissedUser(user.id, dismissedUserId);
-    }
-
-    setExploreUsers(prev => prev.filter(u => u.id !== dismissedUserId));
-    setConversations(prev => prev.filter(c => c.participant.id !== dismissedUserId));
-  }, [user]);
-
-  useEffect(() => {
-    let unsubscribeData: (() => void) | null = null;
-
-    const unsubscribeAuth = firebaseService.onAuthChange(async (firebaseUser: firebase.User | null) => {
-        if (unsubscribeData) {
-            unsubscribeData();
-            unsubscribeData = null;
-        }
-
-        if (firebaseUser) {
-            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
-            
-            unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
-                if (data) {
-                    setUser(data.userProfile);
-                    setAiChatMessages(data.aiChatMessages || []);
-                    setConversations(data.conversations || []);
-                    setOnboardingStep(data.onboardingStep || 0);
-                    setUserTags(data.userTags || { positive: [], negative: [] });
-                    setSelectedRelationshipGoal(data.selectedRelationshipGoal || null);
-                    setOnboardingProgress(data.onboardingProgress || 0);
-                    setShowExploreTabNotification(data.showExploreTabNotification || false);
-                    setIsInitialized(true);
-                } else {
-                    // Data is null, probably a new user, so create their data
-                    const guestUserShell = firebaseUser.isAnonymous ? GUEST_USER : undefined;
-                    await firebaseService.createInitialUserData(firebaseUser, guestUserShell);
-                    // The listener will be triggered again with the new data
-                }
-            });
-        } else {
-            // Signed out
-            setUser(null);
-            setAiChatMessages([]);
-            setConversations([]);
-            setOnboardingStep(0);
-            setUserTags({ positive: [], negative: [] });
-            setSelectedRelationshipGoal(null);
-            setOnboardingProgress(0);
-            setShowExploreTabNotification(false);
-            setExploreUsers([]);
-            _setActivePage(Page.AI_CHAT);
-            setViewingConversationId(null);
-            setIsInitialized(true);
-        }
-    });
-
-    return () => {
-        unsubscribeAuth();
-        if (unsubscribeData) {
-            unsubscribeData();
-        }
-    };
-  }, []);
-
-  useEffect(() => {
-      const handleVisibilityChange = () => {
-          if (!user) return;
-          if (document.visibilityState === 'hidden') {
-              firebaseService.updateUserOnlineStatus(user.id, new Date().toISOString());
-          } else {
-              firebaseService.updateUserOnlineStatus(user.id, 'online');
-          }
-      };
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      return () => {
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-  }, [user]);
-
-  const signInAsGuest = useCallback(async () => {
-      try {
-          await firebaseService.signInGuest();
-      } catch (error) {
-          console.error("Error signing in as guest:", error);
-      }
-  }, []);
-
-  const signInWithGoogle = useCallback(async () => {
-      try {
-          await firebaseService.signInWithGoogle();
-      } catch (error) {
-          console.error("Error signing in with Google:", error);
-      }
-  }, []);
-
-  const signOut = useCallback(async () => {
-      try {
-          if (user) {
-            await firebaseService.updateUserOnlineStatus(user.id, new Date().toISOString());
-          }
-          await firebaseService.signOut();
-      } catch (error) {
-          console.error("Error signing out:", error);
-      }
-  }, [user]);
-  
-  const sendMessage = useCallback(async (participantId: string, text: string, imageUrl?: string) => {
-    if (!user) return;
-
-    const isMockParticipant = MOCK_USERS.some(u => u.id === participantId);
-
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: user.id,
-      text,
-      timestamp: new Date().toISOString(),
-      ...(imageUrl && { imageUrl }),
-    };
-
-    // --- Update SENDER's state locally & persist ---
-    const senderConvo = conversations.find(c => c.participant.id === participantId);
-    let updatedSenderConversations;
-    let targetConversation;
-
-    if (senderConvo) {
-      targetConversation = { ...senderConvo, messages: [...senderConvo.messages, newMessage] };
-      updatedSenderConversations = conversations.map(c => c.id === participantId ? targetConversation : c);
-    } else {
-      let participantData = isMockParticipant 
-        ? MOCK_USERS.find(u => u.id === participantId) 
-        : (await firebaseService.getUserData(participantId))?.userProfile;
-
-      if (!participantData) {
-        console.error("Could not find participant to send message");
-        return;
-      }
-      targetConversation = { id: participantData.id, participant: participantData, messages: [newMessage], unreadCount: 0 };
-      updatedSenderConversations = [targetConversation, ...conversations];
-    }
-    setConversations(updatedSenderConversations);
-    await firebaseService.updateUserData(user.id, { conversations: updatedSenderConversations });
-    setUser(prev => prev ? { ...prev, onlineStatus: 'online' } : null);
-
-    // --- Handle PARTICIPANT's state ---
-    if (isMockParticipant && targetConversation) {
-        setTypingParticipantIds(prev => [...prev, participantId]);
-        const randomDelay = Math.random() * 4000 + 1000;
-        
-        setTimeout(async () => {
-            try {
-                const aiResponseText = await geminiService.generateChatResponse(user, targetConversation!.participant, targetConversation!.messages);
-                const aiMessage: Message = { id: `msg-${Date.now() + 1}`, senderId: participantId, text: aiResponseText, timestamp: new Date().toISOString() };
-                
-                const finalConvos = updatedSenderConversations.map(c => 
-                    c.id === participantId ? { ...c, messages: [...c.messages, aiMessage] } : c
-                );
-                
-                setConversations(finalConvos);
-                await firebaseService.updateUserData(user.id, { conversations: finalConvos });
-
-            } catch(error) {
-                console.error("Failed to get AI response", error);
-            } finally {
-                setTypingParticipantIds(prev => prev.filter(id => id !== participantId));
-            }
-        }, randomDelay);
-
-    } else if (!isMockParticipant) {
-        // Persist message to REAL participant's document in Firestore
-        const participantDoc = await firebaseService.getUserData(participantId);
-        if (participantDoc) {
-            const pConvos = participantDoc.conversations || [];
-            const convoWithCurrentUser = pConvos.find(c => c.participant.id === user.id);
-            let updatedParticipantConversations;
-
-            if (convoWithCurrentUser) {
-                updatedParticipantConversations = pConvos.map(c => 
-                    c.id === user.id ? { ...c, messages: [...c.messages, newMessage], unreadCount: (c.unreadCount || 0) + 1 } : c
-                );
-            } else {
-                const newConvoForParticipant = { id: user.id, participant: user, messages: [newMessage], unreadCount: 1 };
-                updatedParticipantConversations = [newConvoForParticipant, ...pConvos];
-            }
-            await firebaseService.updateUserData(participantId, { conversations: updatedParticipantConversations });
-        }
-    }
-  }, [user, conversations, viewingConversationId]);
-
-
-  const handleSetViewingConversationId = useCallback((id: string | null) => {
-      if (id && user) {
-          const updatedConversations = conversations.map(c => 
-              c.id === id ? { ...c, unreadCount: 0 } : c
-          );
-          if (JSON.stringify(updatedConversations) !== JSON.stringify(conversations)) {
-              setConversations(updatedConversations);
-              firebaseService.updateUserData(user.id, { conversations: updatedConversations });
-          }
-      }
-      setViewingConversationId(id);
-  }, [user, conversations]);
-
-  const _updateAndPersist = useCallback((updates: Partial<FirestoreUserData>) => {
-      if(user) firebaseService.updateUserData(user.id, updates);
-  }, [user]);
-
-  const addAiChatMessage = useCallback((message: AiMessage) => {
-      const newMessages = [...aiChatMessages, message];
-      setAiChatMessages(newMessages);
-      _updateAndPersist({ aiChatMessages: newMessages.map(({onOptionSelect, ...rest}) => rest) });
-  }, [aiChatMessages, _updateAndPersist]);
-  
-  const updateAiChatMessage = useCallback((messageId: string, updates: Partial<AiMessage>) => {
-      const newMessages = aiChatMessages.map(msg => (msg.id === messageId ? { ...msg, ...updates } : msg));
-      setAiChatMessages(newMessages);
-      _updateAndPersist({ aiChatMessages: newMessages.map(({onOptionSelect, ...rest}) => rest) });
-  }, [aiChatMessages, _updateAndPersist]);
-
-  const setAiChatMessagesAndPersist = useCallback((messages: AiMessage[]) => {
-      setAiChatMessages(messages);
-      _updateAndPersist({ aiChatMessages: messages.map(({onOptionSelect, ...rest}) => rest) });
-  }, [_updateAndPersist]);
-
-  const updateOnboardingStep = useCallback((step: number) => {
-      setOnboardingStep(step);
-      _updateAndPersist({ onboardingStep: step });
-  }, [_updateAndPersist]);
-
-  const updateUserTags = useCallback((tags: { positive: string[]; negative: string[] }) => {
-      setUserTags(tags);
-      _updateAndPersist({ userTags: tags });
-  }, [_updateAndPersist]);
-
-  const setSelectedRelationshipGoalAndPersist = useCallback((goal: RelationshipType | null) => {
-      setSelectedRelationshipGoal(goal);
-      _updateAndPersist({ selectedRelationshipGoal: goal });
-  }, [_updateAndPersist]);
-
-  const updateOnboardingProgress = useCallback((progress: number) => {
-      setOnboardingProgress(progress);
-      _updateAndPersist({ onboardingProgress: progress });
-  }, [_updateAndPersist]);
-  
-  const completeOnboarding = useCallback((relationshipGoal: RelationshipType, tags: { positive: string[], negative: string[] }) => {
-    const updatedUser = user ? { ...user, onboardingCompleted: true, relationshipGoal, tags } : null;
-    if (updatedUser) {
-        setUser(updatedUser);
-        setOnboardingProgress(100);
-        setShowExploreTabNotification(true);
-        _updateAndPersist({
-            userProfile: updatedUser,
-            onboardingProgress: 100,
-            showExploreTabNotification: true,
-        });
-    }
-  }, [user, _updateAndPersist]);
-
-  const updateUserProfile = useCallback((name: string, avatar: string) => {
-      const updatedUser = user ? { ...user, name, avatar } : null;
-      if (updatedUser) {
-          setUser(updatedUser);
-          _updateAndPersist({ userProfile: updatedUser });
-      }
-  }, [user, _updateAndPersist]);
-
-  const updateUserTagsInProfile = useCallback((tags: { positive: string[]; negative: string[] }) => {
-    if (!user || !user.onboardingCompleted) return;
-    const newPositive = [...new Set([...user.tags.positive, ...tags.positive])];
-    const newNegative = [...new Set([...user.tags.negative, ...tags.negative])];
-    const updatedUser = { ...user, tags: { positive: newPositive, negative: newNegative } };
-    setUser(updatedUser);
-    _updateAndPersist({ userProfile: updatedUser });
-  }, [user, _updateAndPersist]);
-
-  const generateExploreUsers = useCallback(async () => {
-      if (!user || !user.onboardingCompleted) return;
-
-      const [firebaseUsers, dismissedIds] = await Promise.all([
-          firebaseService.getAllUsers(),
-          firebaseService.getDismissedIds(user.id),
-      ]);
-      
-      const allPossibleUsers = [...MOCK_USERS, ...firebaseUsers];
-      
-      const dismissedIdsSet = new Set(dismissedIds);
-      const conversationParticipantIds = new Set(
-          conversations.map(c => c.participant.id)
-      );
-      
-      const addedUserIds = new Set<string>();
-      const potentialMatches = allPossibleUsers.filter(
-          (potentialMatch) => {
-              if (addedUserIds.has(potentialMatch.id)) {
-                  return false;
-              }
-              
-              const isInvalid =
-                  potentialMatch.id === user.id ||
-                  !potentialMatch.onboardingCompleted ||
-                  conversationParticipantIds.has(potentialMatch.id) ||
-                  dismissedIdsSet.has(potentialMatch.id);
-              
-              if (!isInvalid) {
-                  addedUserIds.add(potentialMatch.id);
-              }
-
-              return !isInvalid;
-          }
-      );
-      
-      potentialMatches.sort(() => Math.random() - 0.5);
-      setExploreUsers(potentialMatches);
-  }, [user, conversations]);
-
-  useEffect(() => {
-    const isInitialLoad = prevConversationsLength.current === undefined;
-    const newChatStarted = !isInitialLoad && conversations.length > prevConversationsLength.current!;
-
-    if (user?.onboardingCompleted) {
-        if (isInitialLoad || newChatStarted) {
-            generateExploreUsers();
-        }
-    } else {
-        setExploreUsers([]);
-    }
-    
-    prevConversationsLength.current = conversations.length;
-  }, [user?.onboardingCompleted, conversations, generateExploreUsers]);
-
-  const contextValue: AppContextType = {
-    user, isInitialized, activePage, onboardingProgress, signInAsGuest, signInWithGoogle, signOut,
-    setActivePage, updateOnboardingProgress, completeOnboarding,
-    updateUserProfile, updateUserTagsInProfile, aiChatMessages, addAiChatMessage, updateAiChatMessage,
-    setAiChatMessages: setAiChatMessagesAndPersist, onboardingStep, updateOnboardingStep, userTags,
-    updateUserTags, selectedRelationshipGoal, setSelectedRelationshipGoal: setSelectedRelationshipGoalAndPersist,
-    conversations, requests, myConversations, viewingConversationId, setViewingConversationId: handleSetViewingConversationId, sendMessage,
-    typingParticipantIds, exploreUsers, dismissExploreUser, showExploreTabNotification, totalUnreadCount
-  };
-
-  return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
+      <p className="absolute bottom-5 text-xs text-gray-500 dark:text-gray-400">
+        Find your movie buddy, gym partner, or maybe something more.
+      </p>
+    </div>
+  );
 };
 
-export const useAppContext = (): AppContextType => {
-  const context = useContext(AppContext);
-  if (context === undefined) throw new Error('useAppContext must be used within an AppProvider');
-  return context;
-};
-
-export { Page };
+export default SplashScreen;
