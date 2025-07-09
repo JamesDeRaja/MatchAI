@@ -1,4 +1,5 @@
 
+
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
@@ -204,7 +205,10 @@ class FirebaseService {
 
         try {
             const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
-            return await userRef.update(sanitizedData);
+            // Use set with merge: true to act as an "upsert".
+            // This creates the document if it doesn't exist, and merges data if it does,
+            // preventing "No document to update" errors.
+            return await userRef.set(sanitizedData, { merge: true });
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('circular structure')) {
                 console.error("Critical Error: A circular reference was detected in the application state, preventing data from being saved. This is a bug that needs to be fixed.", {data});
@@ -216,7 +220,17 @@ class FirebaseService {
 
     async updateUserOnlineStatus(userId: string, status: 'online' | string) {
         const userRef = this.getUserDocRef(userId);
-        return userRef.update({ "userProfile.onlineStatus": status });
+        // Use set with merge: true to avoid "No document to update" errors on new user login.
+        // This will create/merge the nested userProfile object gracefully.
+        try {
+            return await userRef.set({
+                userProfile: {
+                    onlineStatus: status
+                }
+            }, { merge: true });
+        } catch (error) {
+            console.error("Error updating user online status:", error);
+        }
     }
 
     // --- Explored Collection Methods ---
