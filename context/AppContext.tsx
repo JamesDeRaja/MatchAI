@@ -1,5 +1,6 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Page, User, RelationshipType, AiMessage, Conversation, Message, ExploreCardData, UsersList } from '../types';
+import { Page, User, RelationshipType, AiMessage, Conversation, Message, ExploreCardData } from '../types';
 import { GUEST_USER, MOCK_USERS } from '../constants';
 import { firebaseService, FirestoreUserData } from '../services/firebase';
 import firebase from 'firebase/compat/app';
@@ -9,7 +10,6 @@ import { geminiService } from '../services/geminiService';
 
 interface AppContextType {
   user: User | null;
-  usersList: UsersList;
   isInitialized: boolean;
   activePage: Page;
   onboardingProgress: number;
@@ -54,7 +54,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [usersList, setUsersList] = useState< {[key:string]:User} | {}>({});
   const [activePage, _setActivePage] = useState<Page>(Page.AI_CHAT);
   const [onboardingProgress, setOnboardingProgress] = useState(0);
 
@@ -130,18 +129,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setExploreUsers(prev => prev.filter(u => u.id !== dismissedUserId));
     setConversations(prev => prev.filter(c => c.participant.id !== dismissedUserId));
   }, [user]);
-  useEffect(()=>{
 
-  },[usersList]);
   useEffect(() => {
     let unsubscribeData: (() => void) | null = null;
-    firebaseService.getAllUsers().then((response)=>{
-      let object: UsersList = {};
-      response.forEach((userItem:User)=>{
-        object[userItem.id]=userItem;
-      })
-      setUsersList({...object});
-    });
+
     const unsubscribeAuth = firebaseService.onAuthChange(async (firebaseUser: firebase.User | null) => {
         if (unsubscribeData) {
             unsubscribeData();
@@ -149,10 +140,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (firebaseUser) {
-            //await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
-            if(await firebaseService.getUserData(firebaseUser.uid)){
-               firebaseService.updateUserOnlineStatus(firebaseUser.uid,'online');
-             }
+            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
             
             unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
                 if (data) {
@@ -255,7 +243,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // --- Update SENDER's state locally & persist ---
     const senderConvo = conversations.find(c => c.participant.id === participantId);
     let updatedSenderConversations;
-    let targetConversation:any;
+    let targetConversation;
 
     if (senderConvo) {
       targetConversation = { ...senderConvo, messages: [...senderConvo.messages, newMessage] };
@@ -286,12 +274,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const aiResponseText = await geminiService.generateChatResponse(user, targetConversation!.participant, targetConversation!.messages);
                 const aiMessage: Message = { id: `msg-${Date.now() + 1}`, senderId: participantId, text: aiResponseText, timestamp: new Date().toISOString() };
                 
-                const finalConvos = updatedSenderConversations.map(c => 
-                    c.id === participantId ? { ...c, messages: [...c.messages, aiMessage] } : c
-                );
+                let finalConversationsWithAiReply;
                 
-                setConversations(finalConvos);
-                await firebaseService.updateUserData(user.id, { conversations: finalConvos });
+                setConversations(currentConversations => {
+                    finalConversationsWithAiReply = currentConversations.map(c => 
+                        c.id === participantId ? { ...c, messages: [...c.messages, aiMessage] } : c
+                    );
+                    return finalConversationsWithAiReply;
+                });
+                
+                if (finalConversationsWithAiReply) {
+                    await firebaseService.updateUserData(user.id, { conversations: finalConversationsWithAiReply });
+                }
 
             } catch(error) {
                 console.error("Failed to get AI response", error);
@@ -469,7 +463,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAiChatMessages: setAiChatMessagesAndPersist, onboardingStep, updateOnboardingStep, userTags,
     updateUserTags, selectedRelationshipGoal, setSelectedRelationshipGoal: setSelectedRelationshipGoalAndPersist,
     conversations, requests, myConversations, viewingConversationId, setViewingConversationId: handleSetViewingConversationId, sendMessage,
-    typingParticipantIds, exploreUsers, dismissExploreUser, showExploreTabNotification, totalUnreadCount, usersList
+    typingParticipantIds, exploreUsers, dismissExploreUser, showExploreTabNotification, totalUnreadCount
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
