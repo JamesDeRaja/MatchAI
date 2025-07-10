@@ -324,9 +324,10 @@ const ConversationPage: React.FC<{ conversationId: string }> = ({ conversationId
                         className="hidden"
                         accept="image/*"
                     />
+{/*                     Enable if you need file upload
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-500 dark:text-gray-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors">
                         <PaperclipIcon />
-                    </button>
+                    </button> */}
                     <input
                         type="text"
                         value={newMessage}
