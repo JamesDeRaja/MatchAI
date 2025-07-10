@@ -40,12 +40,12 @@ const SplashScreen: React.FC = () => {
           Sign in with Google
         </button>
 
-        <button
+{/*         <button
           onClick={signInAsGuest}
           className="w-full bg-transparent text-gray-600 dark:text-gray-400 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
         >
           Continue as Guest
-        </button>
+        </button> */}
       </div>
 
       <p className="absolute bottom-5 text-xs text-gray-500 dark:text-gray-400">
