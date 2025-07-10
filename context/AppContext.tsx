@@ -149,10 +149,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (firebaseUser) {
-            //await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
-            if(await firebaseService.getUserData(firebaseUser.uid)){
-               firebaseService.updateUserOnlineStatus(firebaseUser.uid,'online');
-             }
+            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
+            // if(await firebaseService.getUserData(firebaseUser.uid)){
+            //    firebaseService.updateUserOnlineStatus(firebaseUser.uid,'online');
+            //  }
             
             unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
                 if (data) {
