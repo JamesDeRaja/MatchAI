@@ -318,6 +318,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             await firebaseService.updateUserData(participantId, { conversations: updatedParticipantConversations });
         }
+    }else{
+    // 2. Schedule the AI response
+      const scheduleAIResponse = async (convo: Conversation) => {
+          const participant = MOCK_USERS.find(u => u.id === participantId);
+          if (!participant || participant.id === user.id) return;
+  
+          setTypingParticipantIds(prev => [...prev, participantId]);
+          
+          try {
+              const aiResponseText = await geminiService.generateChatResponse(user, participant, convo.messages);
+              
+              const aiMessage: Message = {
+                  id: `msg-${Date.now() + 1}`,
+                  senderId: participant.id,
+                  text: aiResponseText,
+                  timestamp: new Date().toISOString()
+              };
+  
+              setConversations(prev => {
+                  const convoIndex = prev.findIndex(c => c.id === participantId);
+                  if (convoIndex > -1) {
+                      const newConvos = [...prev];
+                      const convoToUpdate = { ...newConvos[convoIndex] };
+                      convoToUpdate.messages = [...convoToUpdate.messages, aiMessage];
+                      
+                      if (viewingConversationId !== participantId) {
+                          convoToUpdate.unreadCount = (convoToUpdate.unreadCount || 0) + 1;
+                      }
+  
+                      newConvos[convoIndex] = convoToUpdate;
+                      return newConvos;
+                  }
+                  return prev;
+              });
+  
+          } catch (error) {
+              console.error("Failed to generate AI chat response:", error);
+          } finally {
+              setTypingParticipantIds(prev => prev.filter(id => id !== participantId));
+          }
+      };
     }
   }, [user, conversations, viewingConversationId]);
 
