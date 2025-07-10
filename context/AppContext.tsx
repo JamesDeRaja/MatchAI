@@ -277,7 +277,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUser(prev => prev ? { ...prev, onlineStatus: 'online' } : null);
 
     // --- Handle PARTICIPANT's state ---
-    if (isMockParticipant && targetConversation) {
+    if (isMockParticipant) {
         setTypingParticipantIds(prev => [...prev, participantId]);
         const randomDelay = Math.random() * 4000 + 1000;
         
