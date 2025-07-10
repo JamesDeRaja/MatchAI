@@ -149,10 +149,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (firebaseUser) {
-            await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
-            
             unsubscribeData = firebaseService.onUserDataUpdate(firebaseUser.uid, async (data) => {
                 if (data) {
+                    // User document exists, hydrate the state.
                     setUser(data.userProfile);
                     setAiChatMessages(data.aiChatMessages || []);
                     setConversations(data.conversations || []);
@@ -162,11 +161,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     setOnboardingProgress(data.onboardingProgress || 0);
                     setShowExploreTabNotification(data.showExploreTabNotification || false);
                     setIsInitialized(true);
+                    
+                    // Now that we've confirmed the user document exists, it's safe to update their status.
+                    // This ensures a user is marked 'online' as soon as they log in or the app loads.
+                    await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
                 } else {
-                    // Data is null, probably a new user, so create their data
+                    // Data is null, probably a new user, so create their data.
+                    // The listener will then be triggered again with the new data, which will
+                    // run the `if(data)` block above and correctly set the online status.
                     const guestUserShell = firebaseUser.isAnonymous ? GUEST_USER : undefined;
                     await firebaseService.createInitialUserData(firebaseUser, guestUserShell);
-                    // The listener will be triggered again with the new data
                 }
             });
         } else {
