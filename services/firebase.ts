@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
 
 import { User, Conversation, RelationshipType } from '../types';
 import { getInitialMockChats } from '../constants';      // ← needed later
@@ -227,18 +227,11 @@ class FirebaseService {
         }
     }
 
-    async updateUserOnlineStatus(uid: string, status: string) {
-      const ref = doc(this.db, 'users', uid);
-      await setDoc(
-        ref,
-        {
-          userProfile: {
-            onlineStatus: status,
-            // add lastSeen so you don’t lose timestamp data
-            lastSeenAt: status === 'online' ? serverTimestamp() : status
-          }
-        },
-        { merge: true }          // <<— creates the doc if it doesn’t exist
+    export async function updateUserOnlineStatus(uid: string, status: string) {
+      const ref = firebase.firestore().doc(`users/${uid}`);
+      await ref.set(
+        { userProfile: { onlineStatus: status } },
+        { merge: true }
       );
     }
 
