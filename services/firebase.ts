@@ -227,9 +227,19 @@ class FirebaseService {
         }
     }
 
-    async updateUserOnlineStatus(userId: string, status: 'online' | string) {
-        const userRef = this.getUserDocRef(userId);
-        return userRef.update({ "userProfile.onlineStatus": status });
+    async updateUserOnlineStatus(uid: string, status: string) {
+      const ref = doc(this.db, 'users', uid);
+      await setDoc(
+        ref,
+        {
+          userProfile: {
+            onlineStatus: status,
+            // add lastSeen so you don’t lose timestamp data
+            lastSeenAt: status === 'online' ? serverTimestamp() : status
+          }
+        },
+        { merge: true }          // <<— creates the doc if it doesn’t exist
+      );
     }
 
     // --- Explored Collection Methods ---
