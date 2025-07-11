@@ -1,19 +1,16 @@
-
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
-import { User, RelationshipType, Conversation } from '../types';
 
-import { User, AiMessage, Conversation, RelationshipType } from '../types';
-import { getInitialMockChats } from "../constants";
+import { User, Conversation, RelationshipType } from '../types';
+import { getInitialMockChats } from '../constants';      // ← needed later
 
 const USERS_COLLECTION = 'users';
 const EXPLORED_COLLECTION = 'explored';
 
-/** Exactly what your listener expects back from Firestore */
 export interface FirestoreUserData {
   userProfile: User;
-  aiChatMessages: [];
+  aiChatMessages: any[];                  // or AiMessage[] if you decide to import it
   conversations: Conversation[];
   onboardingStep: number;
   onboardingProgress: number;
@@ -164,35 +161,6 @@ class FirebaseService {
             console.error("Error getting all users:", error);
             return [];
         }
-    }
-
-        async createInitialUserData(firebaseUser: firebase.User, guestUserShell?: User) {
-          await this.firestore.collection('users')
-            .doc(firebaseUser.uid)
-            .set({
-              id: firebaseUser.uid,
-            name: firebaseUser.displayName || guestData?.name || 'Anonymous Guest',
-            avatar: firebaseUser.photoURL || guestData?.avatar || `https://picsum.photos/seed/${firebaseUser.uid}/200`,
-            tags: { positive: [], negative: [] },
-            onboardingCompleted: false,
-            authType: firebaseUser.isAnonymous ? 'guest' : 'google',
-            onlineStatus: 'online',
-                }, { merge: true });
-        };
-
-        const initialData: FirestoreUserData = {
-            userProfile,
-            aiChatMessages: [],
-            conversations: getInitialMockChats(userProfile),
-            onboardingStep: 0,
-            userTags: { positive: [], negative: [] },
-            selectedRelationshipGoal: null,
-            onboardingProgress: 0,
-            showExploreTabNotification: false,
-        };
-
-        await userRef.set(initialData);
-        return initialData;
     }
 
     async createInitialUserData(
