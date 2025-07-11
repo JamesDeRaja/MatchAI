@@ -1,7 +1,8 @@
 
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
-import "firebase/compat/firestore";
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+import { User, RelationshipType, Conversation } from '../types';
 
 import { User, AiMessage, Conversation, RelationshipType } from '../types';
 import { getInitialMockChats } from "../constants";
@@ -9,16 +10,17 @@ import { getInitialMockChats } from "../constants";
 const USERS_COLLECTION = 'users';
 const EXPLORED_COLLECTION = 'explored';
 
-// This is the shape of the data stored in a single user document in Firestore
+/** Exactly what your listener expects back from Firestore */
 export interface FirestoreUserData {
-    userProfile: User;
-    aiChatMessages: Omit<AiMessage, 'onOptionSelect'>[];
-    conversations: Conversation[];
-    onboardingStep: number;
-    userTags: { positive: string[], negative: string[] };
-    selectedRelationshipGoal: RelationshipType | null;
-    onboardingProgress: number;
-    showExploreTabNotification: boolean;
+  userProfile: User;
+  aiChatMessages: [];
+  conversations: Conversation[];
+  onboardingStep: number;
+  onboardingProgress: number;
+  userTags: { positive: string[]; negative: string[] };
+  selectedRelationshipGoal: RelationshipType | null;
+  showExploreTabNotification: boolean;
+  dismissedUserIds: string[];
 }
 
 // Your web app's Firebase configuration
@@ -164,17 +166,18 @@ class FirebaseService {
         }
     }
 
-    async createInitialUserData(firebaseUser: firebase.User, guestData?: Partial<User>): Promise<FirestoreUserData> {
-        const userRef = this.getUserDocRef(firebaseUser.uid);
-        
-        const userProfile: User = {
-            id: firebaseUser.uid,
+        async createInitialUserData(firebaseUser: firebase.User, guestUserShell?: User) {
+          await this.firestore.collection('users')
+            .doc(firebaseUser.uid)
+            .set({
+              id: firebaseUser.uid,
             name: firebaseUser.displayName || guestData?.name || 'Anonymous Guest',
             avatar: firebaseUser.photoURL || guestData?.avatar || `https://picsum.photos/seed/${firebaseUser.uid}/200`,
             tags: { positive: [], negative: [] },
             onboardingCompleted: false,
             authType: firebaseUser.isAnonymous ? 'guest' : 'google',
             onlineStatus: 'online',
+                }, { merge: true });
         };
 
         const initialData: FirestoreUserData = {
@@ -190,6 +193,48 @@ class FirebaseService {
 
         await userRef.set(initialData);
         return initialData;
+    }
+
+    async createInitialUserData(
+      firebaseUser: firebase.User,
+      guestUserShell?: User
+    ) {
+      const uid = firebaseUser.uid;
+    
+      // 1. Build a complete User object
+      const userProfile: User =
+        guestUserShell ??
+        ({
+          id: uid,
+          name: firebaseUser.displayName ?? 'New user',
+          avatar:
+            firebaseUser.photoURL ??
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              firebaseUser.displayName ?? 'U'
+            )}`,
+          authType: firebaseUser.isAnonymous ? 'guest' : 'google',
+          tags: { positive: [], negative: [] },
+          onboardingCompleted: false,
+          onlineStatus: 'online',
+        } as User);
+    
+      // 2. Build the **full schema** expected by the app
+      const initialData: FirestoreUserData = {
+        userProfile,
+        aiChatMessages: [],
+        conversations: [],
+        onboardingStep: 0,
+        onboardingProgress: 0,
+        userTags: { positive: [], negative: [] },
+        selectedRelationshipGoal: null,
+        showExploreTabNotification: false,
+        dismissedUserIds: [],
+      };
+    
+      // 3. Write it once, with merge:false so we never leave half-baked docs
+      await this.firestore.collection('users').doc(uid).set(initialData, {
+        merge: false,
+      });
     }
     
     async updateUserData(userId: string, data: Partial<FirestoreUserData>) {
