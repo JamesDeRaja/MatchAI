@@ -62,15 +62,15 @@ class FirebaseService {
     
     onAuthChange(callback: (user: firebase.User | null) => void) {
         return this.auth.onAuthStateChanged(callback);
-    }
+    },
 
     async signInWithGoogle() {
         return this.auth.signInWithPopup(this.googleProvider);
-    }
+    },
 
     async signInGuest() {
         return this.auth.signInAnonymously();
-    }
+    },
 
     async signOut() {
         const userId = this.auth.currentUser?.uid;
