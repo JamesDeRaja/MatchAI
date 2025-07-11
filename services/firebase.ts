@@ -62,15 +62,15 @@ class FirebaseService {
     
     onAuthChange(callback: (user: firebase.User | null) => void) {
         return this.auth.onAuthStateChanged(callback);
-    },
+    }
 
     async signInWithGoogle() {
         return this.auth.signInWithPopup(this.googleProvider);
-    },
+    }
 
     async signInGuest() {
         return this.auth.signInAnonymously();
-    },
+    }
 
     async signOut() {
         const userId = this.auth.currentUser?.uid;
@@ -200,7 +200,7 @@ class FirebaseService {
       };
     
       // 3. Write it once, with merge:false so we never leave half-baked docs
-      await this.firestore.collection('users').doc(uid).set(initialData, {
+      await this.db.collection('users').doc(uid).set(initialData, {
         merge: false,
       });
     }
@@ -227,7 +227,7 @@ class FirebaseService {
         }
     }
 
-    export async function updateUserOnlineStatus(uid: string, status: string) {
+    async function updateUserOnlineStatus(uid: string, status: string) {
       const ref = firebase.firestore().doc(`users/${uid}`);
       await ref.set(
         { userProfile: { onlineStatus: status } },
