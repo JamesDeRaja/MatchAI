@@ -227,12 +227,12 @@ class FirebaseService {
         }
     }
 
-    async function updateUserOnlineStatus(uid: string, status: string) {
-      const ref = firebase.firestore().doc(`users/${uid}`);
-      await ref.set(
-        { userProfile: { onlineStatus: status } },
-        { merge: true }
-      );
+    async updateUserOnlineStatus(uid: string, status: string) {
+        const ref = this.db.collection(USERS_COLLECTION).doc(uid);
+        await ref.set(
+            { userProfile: { onlineStatus: status } },
+            { merge: true }
+        );
     }
 
     // --- Explored Collection Methods ---
