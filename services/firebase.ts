@@ -207,7 +207,7 @@ class FirebaseService {
     
     async updateUserData(userId: string, data: Partial<FirestoreUserData>) {
         const userRef = this.getUserDocRef(userId);
-        
+
         const replacer = (key: string, value: any) => {
             if (key === 'onOptionSelect') {
                 return undefined;
@@ -218,9 +218,16 @@ class FirebaseService {
         try {
             const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
             return await userRef.update(sanitizedData);
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof TypeError && error.message.includes('circular structure')) {
                 console.error("Critical Error: A circular reference was detected in the application state, preventing data from being saved. This is a bug that needs to be fixed.", {data});
+            } else if (error.code === 'not-found') {
+                try {
+                    const sanitizedData = JSON.parse(JSON.stringify(data, replacer));
+                    return await userRef.set(sanitizedData, { merge: true });
+                } catch (err) {
+                    console.error("Failed to create missing user document:", err);
+                }
             } else {
                 console.error("Failed to serialize or update user data:", error);
             }
@@ -229,6 +236,11 @@ class FirebaseService {
 
     async updateUserOnlineStatus(uid: string, status: string) {
         const ref = this.db.collection(USERS_COLLECTION).doc(uid);
+        const doc = await ref.get();
+        if (!doc.exists) {
+            console.warn(`User document ${uid} not found when updating online status.`);
+            return;
+        }
         await ref.set(
             { userProfile: { onlineStatus: status } },
             { merge: true }

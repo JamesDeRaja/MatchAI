@@ -166,6 +166,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     // Data is null, probably a new user, so create their data
                     const guestUserShell = firebaseUser.isAnonymous ? GUEST_USER : undefined;
                     await firebaseService.createInitialUserData(firebaseUser, guestUserShell);
+                    await firebaseService.updateUserOnlineStatus(firebaseUser.uid, 'online');
                     // The listener will be triggered again with the new data
                 }
             });
