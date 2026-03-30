@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Page, useAppContext } from './context/AppContext';
 import BottomNav from './components/BottomNav';
@@ -29,8 +28,8 @@ const App: React.FC = () => {
   
   if (!isInitialized) {
       return (
-          <div className="flex justify-center items-center h-screen bg-white dark:bg-black">
-              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-rose-500"></div>
+          <div className="flex justify-center items-center h-screen bg-white/70 dark:bg-black/60 backdrop-blur-sm">
+              <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.3)]"></div>
           </div>
       );
   }
@@ -40,11 +39,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-lg mx-auto bg-white dark:bg-black font-sans">
-      <main className={`flex-1 overflow-y-auto ${!viewingConversationId ? 'pb-20' : ''}`}>
-        {viewingConversationId ? <ConversationPage conversationId={viewingConversationId} /> : renderPage()}
-      </main>
-      {!viewingConversationId && <BottomNav />}
+    <div className="h-screen p-2 sm:p-4">
+      <div className="relative flex flex-col h-full max-w-lg mx-auto rounded-[2rem] overflow-hidden shadow-[0_24px_80px_rgba(15,23,42,0.2)] dark:shadow-[0_24px_80px_rgba(2,6,23,0.85)] ring-1 ring-rose-200/70 dark:ring-slate-700 glass-panel font-sans">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/70 to-transparent dark:from-slate-900/45"></div>
+        <main className={`relative z-10 flex-1 overflow-y-auto ${!viewingConversationId ? 'pb-20' : ''}`}>
+          {viewingConversationId ? <ConversationPage conversationId={viewingConversationId} /> : renderPage()}
+        </main>
+        {!viewingConversationId && <BottomNav />}
+      </div>
     </div>
   );
 };
