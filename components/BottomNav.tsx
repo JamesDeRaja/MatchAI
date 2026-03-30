@@ -13,10 +13,10 @@ const NavItem: React.FC<{
   const isActive = activePage === page;
 
   const colorClass = isActive
-    ? 'text-rose-500 dark:text-rose-400'
+    ? 'text-rose-500 dark:text-rose-300'
     : 'text-gray-500 dark:text-gray-400';
   
-  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-800';
+  const disabledClass = disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rose-50/80 dark:hover:bg-slate-700/70';
 
   const handleClick = () => {
     if (!disabled) {
@@ -28,10 +28,10 @@ const NavItem: React.FC<{
     <button
       onClick={handleClick}
       disabled={disabled}
-      className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${disabledClass}`}
+      className={`group relative flex flex-col items-center justify-center w-full py-2 rounded-xl transition-all duration-200 ${disabledClass}`}
     >
       <div className="relative">
-        <div className={`transition-transform transform ${isActive ? 'scale-110' : ''} ${colorClass}`}>
+        <div className={`transition-transform transform ${isActive ? 'scale-110' : 'group-hover:scale-105'} ${colorClass}`}>
           {icon}
         </div>
         {showNotificationDot && !disabled && (
@@ -44,7 +44,7 @@ const NavItem: React.FC<{
         )}
       </div>
       <span className={`text-xs mt-1 ${colorClass}`}>{label}</span>
-      {isActive && <div className="h-1 w-8 bg-rose-500 dark:bg-rose-400 rounded-full mt-1"></div>}
+      {isActive && <div className="h-1 w-9 bg-gradient-to-r from-rose-500 to-pink-400 dark:from-rose-300 dark:to-pink-200 rounded-full mt-1 shadow-sm"></div>}
     </button>
   );
 };
@@ -54,7 +54,7 @@ const BottomNav: React.FC = () => {
   const isOnboardingCompleted = user?.onboardingCompleted ?? false;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto h-16 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 flex justify-around items-center">
+    <nav className="fixed bottom-2 left-2 right-2 max-w-[calc(32rem-1rem)] sm:max-w-[calc(32rem-2rem)] mx-auto h-16 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-rose-100 dark:border-slate-700 backdrop-blur-md shadow-xl flex justify-around items-center z-20">
       <NavItem
         page={Page.AI_CHAT}
         label="AI Chat"

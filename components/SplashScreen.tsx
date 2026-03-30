@@ -1,56 +1,50 @@
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 
-const HeartIcon: React.FC<{ className: string }> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="m11.645 20.91-1.112-1.016C4.872 14.624 2 11.536 2 8.019 2 4.904 4.496 2.5 7.5 2.5c1.808 0 3.504.856 4.5 2.15C13.008 3.352 14.688 2.5 16.5 2.5c3.008 0 5.5 2.404 5.5 5.519 0 3.517-2.872 6.605-8.533 11.875L12.355 20.91a.5.5 0 0 1-.71 0Z" />
+const HeartIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M47.611,20.083c-1.358-7.239-7.496-12.512-14.789-12.512c-3.46,0-6.759,1.177-9.49,3.336 c-2.731-2.159-6.03-3.336-9.49-3.336c-7.293,0-13.431,5.273-14.789,12.512C-2.356,27.597,1.048,35.257,7.839,40.98l13.933,11.775 c0.907,0.766,2.032,1.149,3.16,1.149s2.253-0.383,3.16-1.149l13.933-11.775C46.952,35.257,50.356,27.597,47.611,20.083z"/>
   </svg>
 );
 
-const GoogleIcon: React.FC<{ className: string }> = ({ className }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
-        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.591l6.19,5.238C44.434,36.338,48,30.656,48,24C48,22.659,47.862,21.35,47.611,20.083z"/>
-    </svg>
+const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303C33.655,32.657,29.243,36,24,36c-6.627,0-12-5.373-12-12 s5.373-12,12-12c3.059,0,5.842,1.154,7.959,3.041l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20 s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.959,3.041l5.657-5.657 C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36 c-5.222,0-9.623-3.319-11.293-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.084,5.571l6.19,5.238 C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+  </svg>
 );
 
-
 const SplashScreen: React.FC = () => {
-  const { signInAsGuest, signInWithGoogle } = useAppContext();
+  const { signInWithGoogle } = useAppContext();
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-rose-100 to-teal-100 dark:from-gray-800 dark:to-slate-900 text-center p-4">
-      <div className="flex items-center mb-4">
-        <HeartIcon className="w-16 h-16 text-rose-500 animate-pulse" />
-        <h1 className="text-5xl font-bold text-gray-800 dark:text-white ml-3">MatchAI</h1>
-      </div>
-      <p className="text-lg text-gray-600 dark:text-gray-300 mb-12">
-        Let our AI help you find your perfect connection.
-      </p>
+    <div className="relative flex flex-col items-center justify-center h-screen text-center p-6 overflow-hidden">
+      <div className="absolute -top-16 -left-16 w-52 h-52 rounded-full bg-rose-300/30 blur-3xl"></div>
+      <div className="absolute -bottom-20 -right-12 w-56 h-56 rounded-full bg-teal-300/30 blur-3xl"></div>
 
-      <div className="w-full max-w-xs space-y-4">
+      <div className="relative z-10 w-full max-w-md rounded-3xl glass-panel shadow-2xl p-8 border border-white/70 dark:border-slate-700/60">
+        <div className="inline-flex items-center justify-center mb-2">
+          <HeartIcon className="w-16 h-16 text-rose-500 animate-pulse" />
+        </div>
+        <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-rose-500 via-pink-500 to-teal-500 bg-clip-text text-transparent">MatchAI</h1>
+        <p className="text-base text-gray-600 dark:text-gray-300 mt-3 mb-8 leading-relaxed">
+          Beautifully curated matches powered by AI insights. Meet people who match your vibe.
+        </p>
+
         <button
           onClick={signInWithGoogle}
-          className="w-full bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-transform transform hover:scale-105 duration-300 flex items-center justify-center"
+          className="w-full bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-100 font-semibold py-3 px-4 border border-gray-300/80 dark:border-gray-600 rounded-xl shadow-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-transform transform hover:scale-[1.01] duration-300 flex items-center justify-center"
         >
           <GoogleIcon className="w-6 h-6 mr-3" />
-          Sign in with Google
+          Continue with Google
         </button>
 
-{/*         <button
-          onClick={signInAsGuest}
-          className="w-full bg-transparent text-gray-600 dark:text-gray-400 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-300"
-        >
-          Continue as Guest
-        </button> */}
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-6">
+          Find your movie buddy, gym partner, or maybe something more.
+        </p>
       </div>
-
-      <p className="absolute bottom-5 text-xs text-gray-500 dark:text-gray-400">
-        Find your movie buddy, gym partner, or maybe something more.
-      </p>
     </div>
   );
 };
